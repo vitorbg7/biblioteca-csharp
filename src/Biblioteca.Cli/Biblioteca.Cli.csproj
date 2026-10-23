@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <!-- Permite rodar com versões mais novas do .NET instaladas (por exemplo, o SDK 9 ou 10 sem o runtime 8). -->
+    <RollForward>Major</RollForward>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>Biblioteca</AssemblyName>
+    <RootNamespace>Biblioteca.Cli</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Biblioteca.Core\Biblioteca.Core.csproj" />
+    <ProjectReference Include="..\Biblioteca.Data\Biblioteca.Data.csproj" />
+  </ItemGroup>
+
+</Project>
