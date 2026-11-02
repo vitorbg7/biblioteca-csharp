@@ -1,36 +1,38 @@
-# Biblioteca
+# Library (C#)
 
-Sistema de empréstimo de livros em C# com banco SQL Server. Cadastra livros e membros, controla empréstimos e devoluções, calcula multa por atraso e gera relatórios. A interface é um menu no console.
+🇧🇷 [Português](README.pt-BR.md) · 🇺🇸 English
 
-## Tecnologias
+A book lending system in C# with a SQL Server database. It registers books and members, manages loans and returns, calculates late fees and generates reports. The interface is a console menu.
+
+## Technologies
 
 - C# / .NET 8
-- SQL Server (T-SQL) com ADO.NET (`Microsoft.Data.SqlClient`), sem ORM
-- xUnit para os testes
+- SQL Server (T-SQL) with ADO.NET (`Microsoft.Data.SqlClient`), no ORM
+- xUnit for tests
 
-## Estrutura
+## Structure
 
 ```
 src/
-  Biblioteca.Core   Regras de negócio, modelos e interfaces de repositório (sem dependência de banco)
-  Biblioteca.Data   Repositórios que acessam o SQL Server
-  Biblioteca.Cli    Menu no console
+  Biblioteca.Core   Business rules, models and repository interfaces (no database dependency)
+  Biblioteca.Data   Repositories that access SQL Server
+  Biblioteca.Cli    Console menu
 tests/
-  Biblioteca.Tests  Testes das regras de negócio
+  Biblioteca.Tests  Business rule tests
 database/
-  01_schema.sql         Tabelas, restrições, índices e view
-  02_dados_exemplo.sql  Dados para testar
-  03_consultas.sql      Consultas de exemplo (JOIN, GROUP BY/HAVING, RANK)
+  01_schema.sql         Tables, constraints, indexes and view
+  02_dados_exemplo.sql  Sample data
+  03_consultas.sql      Example queries (JOIN, GROUP BY/HAVING, RANK)
 ```
 
-O `Core` só conhece as interfaces `ILivroRepositorio`, `IMembroRepositorio` e `IEmprestimoRepositorio`. Quem implementa é o `Data` (SQL Server) ou o `BancoEmMemoria`, usado nos testes e no modo `--memoria`.
+`Core` only knows the interfaces `ILivroRepositorio`, `IMembroRepositorio` and `IEmprestimoRepositorio`. They are implemented by `Data` (SQL Server) or by `BancoEmMemoria`, used in tests and in `--memoria` mode.
 
-## Modelo de dados
+## Data model
 
 ```mermaid
 erDiagram
-    LIVROS ||--o{ EMPRESTIMOS : "é emprestado em"
-    MEMBROS ||--o{ EMPRESTIMOS : "faz"
+    LIVROS ||--o{ EMPRESTIMOS : "is borrowed in"
+    MEMBROS ||--o{ EMPRESTIMOS : "makes"
     LIVROS {
         int Id PK
         nvarchar Titulo
@@ -56,34 +58,34 @@ erDiagram
     }
 ```
 
-## Regras
+## Rules
 
-- Prazo de 14 dias. Multa de R$ 1,00 por dia de atraso; devolver no último dia do prazo não gera multa.
-- Cada membro pode ter até 3 livros emprestados ao mesmo tempo.
-- Quem tem livro atrasado não pega outro até devolver.
-- ISBN-13 é validado pelo dígito verificador e aceito com ou sem hífens.
-- E-mail é único, sem diferenciar maiúsculas de minúsculas.
+- 14-day loan period. Late fee of R$ 1.00 per day; returning on the last day of the period incurs no fee.
+- Each member can have up to 3 books on loan at the same time.
+- Members with an overdue book cannot borrow another until they return it.
+- ISBN-13 is validated by its check digit and accepted with or without hyphens.
+- Email is unique, case-insensitive.
 
-## Decisões
+## Decisions
 
-- **Disponibilidade não é gravada.** A tabela `Livros` guarda só a quantidade total; os exemplares emprestados são contados a partir de `Emprestimos` pela view `vw_LivrosComDisponibilidade`. Assim o número nunca fica diferente da realidade.
-- **Empréstimo atômico.** `TentarRegistrar` abre uma transação e confere os exemplares livres com `UPDLOCK, HOLDLOCK` antes do `INSERT`. Duas pessoas pegando o último exemplar ao mesmo tempo não conseguem as duas.
-- **Regras também no banco.** `CHECK`, `UNIQUE` e chaves estrangeiras impedem dado inválido mesmo que alguém altere o banco fora do programa.
-- **Índices filtrados** (`WHERE DataDevolucao IS NULL`) nos empréstimos em andamento, que são os mais consultados.
-- **Consultas parametrizadas** em todo o acesso a dados. A busca por título usa `COLLATE Latin1_General_CI_AI` (ignora maiúsculas e acentos) e escapa os curingas do `LIKE`.
-- **Data atual injetada** (`TimeProvider`), para testar atraso e multa sem depender do relógio.
+- **Availability is not stored.** The `Livros` table only stores the total quantity; borrowed copies are counted from `Emprestimos` through the `vw_LivrosComDisponibilidade` view. That way the number can never drift from reality.
+- **Atomic loans.** `TentarRegistrar` opens a transaction and checks free copies with `UPDLOCK, HOLDLOCK` before the `INSERT`. Two people taking the last copy at the same time cannot both succeed.
+- **Rules in the database too.** `CHECK`, `UNIQUE` and foreign keys prevent invalid data even if someone changes the database outside the program.
+- **Filtered indexes** (`WHERE DataDevolucao IS NULL`) on ongoing loans, which are the most queried.
+- **Parameterized queries** in all data access. Title search uses `COLLATE Latin1_General_CI_AI` (ignores case and accents) and escapes `LIKE` wildcards.
+- **Injected current date** (`TimeProvider`), to test delays and fees without depending on the clock.
 
-## Como rodar
+## Running
 
-Precisa do [.NET SDK 8](https://dotnet.microsoft.com/download) ou mais novo.
+Requires the [.NET SDK 8](https://dotnet.microsoft.com/download) or newer.
 
-**Sem banco**, com dados de exemplo em memória:
+**Without a database**, with in-memory sample data:
 
 ```
 dotnet run --project src/Biblioteca.Cli -- --memoria
 ```
 
-**Com SQL Server** (LocalDB, Express ou outro). Execute no SSMS ou no Azure Data Studio os arquivos `database/01_schema.sql` e depois `database/02_dados_exemplo.sql`. Pelo terminal, use `-I`, que o `sqlcmd` exige por causa dos índices filtrados:
+**With SQL Server** (LocalDB, Express or other). Run `database/01_schema.sql` and then `database/02_dados_exemplo.sql` in SSMS or Azure Data Studio. From the terminal, use `-I`, which `sqlcmd` requires because of the filtered indexes:
 
 ```
 sqlcmd -S "(localdb)\MSSQLLocalDB" -I -i database/01_schema.sql
@@ -91,9 +93,9 @@ sqlcmd -S "(localdb)\MSSQLLocalDB" -I -i database/02_dados_exemplo.sql
 dotnet run --project src/Biblioteca.Cli
 ```
 
-A conexão padrão aponta para `(localdb)\MSSQLLocalDB`. Para outro servidor, defina a variável de ambiente `BIBLIOTECA_CONNECTION` com a connection string.
+The default connection points to `(localdb)\MSSQLLocalDB`. For another server, set the `BIBLIOTECA_CONNECTION` environment variable to the connection string.
 
-**Testes:**
+**Tests:**
 
 ```
 dotnet test
